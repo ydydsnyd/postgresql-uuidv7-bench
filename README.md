@@ -1,4 +1,4 @@
-# postgresql-uuidv7-bench
-# postgresql-uuidv7-bench
-# postgresql-uuidv7-bench
-# postgresql-uuidv7-bench
+```sh
+npm i
+npm run bench
+```
