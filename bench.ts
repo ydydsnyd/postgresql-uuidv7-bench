@@ -1,61 +1,62 @@
-import { createTables } from './create-tables';
-import { bulkInsertUuidv7Query, bulkInsertSerialQuery, bulkInsertSerialWithRandomQuery, bulkInsertUuidv4Query } from './bulk-insert';
-import { Client } from 'pg';
-import { writeFileSync } from 'fs';
+import { writeFileSync } from "node:fs";
+import { Client } from "pg";
+import { benchModelSet2 } from "./benchModelSet2";
 
-const createClient = () => new Client({
-    host: 'localhost',
-    port: 5432,
-    user: 'postgres',
-    password: 'postgres',
-    database: 'postgres',
-})
+const createClient = () =>
+	new Client({
+		host: "localhost",
+		port: 5432,
+		user: "postgres",
+		password: "postgres",
+		database: "postgres",
+	});
 async function initializeDatabase() {
-    await createTables();
+	const benchModels = benchModelSet2;
 
-    const count = 1000000; // 100万件
+	const csvHeader = `Count,${benchModels.map((benchModel) => benchModel.name).join(",")}`;
 
-    let output = 'Count,Serial(ms),SerialWithRandom(ms),UUIDv4(ms),UUIDv7(ms)\n';
-    console.log(output)
-    for (let i = 0; i < 30; i++) {
-        const client = createClient()
-        await client.connect();
+	const step = 1000000; // 100万件
+	const iteration = 30;
 
-        // Serialの挿入時間計測
-        const startSerial = Date.now();
-        await client.query(await bulkInsertSerialQuery(count));
-        const endSerial = Date.now();
-        const durationSerial = endSerial - startSerial;
+	const client = createClient();
+	await client.connect();
+	await Promise.all(
+		benchModels.map((benchModel) =>
+			client.query(benchModel.dropAndCreateTableQuery()),
+		),
+	);
+	await client.end();
 
-        // SerialWithRandomの挿入時間計測
-        const startSerialWithRandom = Date.now();
-        await client.query(await bulkInsertSerialWithRandomQuery(count));
-        const endSerialWithRandom = Date.now();
-        const durationSerialWithRandom = endSerialWithRandom - startSerialWithRandom;
+	let output = `${csvHeader}\n`;
+	console.log(output);
+	for (let i = 0; i < iteration; i++) {
+		const durations: number[] = [];
 
-        // UUIDv4の挿入時間計測
-        const startUuidv4 = Date.now();
-        await client.query(await bulkInsertUuidv4Query(count));
-        const endUuidv4 = Date.now();
-        const durationUuidv4 = endUuidv4 - startUuidv4;
+		// 計測
+		for (const benchModel of benchModels) {
+			const client = createClient();
+			await client.connect();
 
-        // UUIDv7の挿入時間計測
-        const startUuidv7 = Date.now();
-        await client.query(await bulkInsertUuidv7Query(count));
-        const endUuidv7 = Date.now();
-        const durationUuidv7 = endUuidv7 - startUuidv7;
+			const query = benchModel.bulkInsertQuery(step);
+			const start = Date.now();
+			// explain
+			await client.query(query);
+			const end = Date.now();
+			const duration = end - start;
+			durations.push(duration);
 
-        // CSV出力
-        const totalCount = (i + 1) * count;
-        const csvData = `${totalCount},${durationSerial},${durationSerialWithRandom},${durationUuidv4},${durationUuidv7}\n`;
-        output += csvData;
+			await client.end();
+		}
 
-        console.log(csvData)
+		// CSV出力
+		const totalCount = (i + 1) * step;
+		const csvData = `${totalCount},${durations.join(",")}\n`;
+		output += csvData;
 
-        await client.end();
-    }
+		console.log(csvData);
+	}
 
-    writeFileSync('insert_times.csv', output);
+	writeFileSync("insert_times.csv", output);
 }
 
-initializeDatabase().catch(console.error);
+initializeDatabase();
