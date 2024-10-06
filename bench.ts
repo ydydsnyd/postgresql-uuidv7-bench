@@ -34,7 +34,7 @@ async function initializeDatabase() {
 
 		// 計測
 		for (const benchModel of benchModels) {
-			const client = createClient();-
+			const client = createClient();
 			await client.connect();
 
 			const query = benchModel.bulkInsertQuery(step);
