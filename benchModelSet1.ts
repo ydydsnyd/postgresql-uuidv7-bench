@@ -10,7 +10,7 @@ const serialBenchModel: BenchModel = {
 		return `
             DROP TABLE IF EXISTS serial_table;
             CREATE TABLE IF NOT EXISTS serial_table (
-                id SERIAL PRIMARY KEY
+                id BIGSERIAL PRIMARY KEY
             );
         `;
 	},
@@ -26,7 +26,7 @@ const serialWithRandomBenchModel: BenchModel = {
 		return `
             DROP TABLE IF EXISTS serial_with_random_table;
             CREATE TABLE IF NOT EXISTS serial_with_random_table (
-                id SERIAL PRIMARY KEY,
+                id BIGSERIAL PRIMARY KEY,
                 random VARCHAR(21) NOT NULL UNIQUE
             );
         `;

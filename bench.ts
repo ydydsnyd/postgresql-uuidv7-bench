@@ -1,6 +1,6 @@
 import { writeFileSync } from "node:fs";
 import { Client } from "pg";
-import { benchModelSet2 } from "./benchModelSet2";
+import { benchModelSet1 } from "./benchModelSet1";
 
 const createClient = () =>
 	new Client({
@@ -11,7 +11,7 @@ const createClient = () =>
 		database: "postgres",
 	});
 async function initializeDatabase() {
-	const benchModels = benchModelSet2;
+	const benchModels = benchModelSet1;
 
 	const csvHeader = `Count,${benchModels.map((benchModel) => benchModel.name).join(",")}`;
 
@@ -34,7 +34,7 @@ async function initializeDatabase() {
 
 		// 計測
 		for (const benchModel of benchModels) {
-			const client = createClient();
+			const client = createClient();-
 			await client.connect();
 
 			const query = benchModel.bulkInsertQuery(step);
